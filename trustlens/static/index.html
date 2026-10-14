@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101318">
+  <title>TRUSTLENS | Investigation Workspace</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <a class="brand" href="#dashboard" aria-label="TRUSTLENS home">
+        <span class="brand-mark" aria-hidden="true">T</span>
+        <span><strong>TRUSTLENS</strong><small>LOCAL FORENSICS</small></span>
+      </a>
+      <div class="workspace-label">WORKSPACE</div>
+      <nav class="nav-list">
+        <button class="nav-item active" data-view="dashboard"><span class="nav-icon">◫</span>Overview</button>
+        <button class="nav-item" data-view="new"><span class="nav-icon">＋</span>New analysis</button>
+        <button class="nav-item" data-view="history"><span class="nav-icon">▤</span>Investigations</button>
+        <button class="nav-item" data-view="system"><span class="nav-icon">⌁</span>System status</button>
+      </nav>
+      <div class="sidebar-spacer"></div>
+      <div class="local-notice"><span class="status-dot"></span><div><strong>Local workspace</strong><small>Single-user · loopback only</small></div></div>
+      <div class="sidebar-footer">AI-assisted decision support<br>Human investigator retains final judgment.</div>
+    </aside>
+
+    <div class="main-column">
+      <header class="topbar">
+        <div class="breadcrumb"><span>TRUSTLENS</span><span class="crumb-sep">/</span><strong id="page-title">Overview</strong></div>
+        <div class="topbar-right"><span class="local-pill"><span class="status-dot"></span>LOCAL ONLY</span><button class="avatar" aria-label="Local single-user workspace">L</button></div>
+      </header>
+
+      <main id="main" class="content" tabindex="-1">
+        <section id="view-dashboard" class="view active" aria-labelledby="dashboard-heading">
+          <div class="page-heading">
+            <div><div class="eyebrow">INVESTIGATION DESK</div><h1 id="dashboard-heading">Overview</h1><p class="muted">A clear view of analyses processed in this local workspace.</p></div>
+            <button class="button button-primary" data-go="new"><span aria-hidden="true">＋</span> New analysis</button>
+          </div>
+          <div id="dashboard-error" class="notice notice-error hidden" role="alert"></div>
+          <div class="stat-grid" id="stats-grid" aria-live="polite">
+            <article class="stat-card"><span class="stat-label">TOTAL ANALYSES</span><strong data-stat="total">—</strong><span class="stat-foot">Saved in this workspace</span></article>
+            <article class="stat-card"><span class="stat-label">COMPLETED</span><strong data-stat="completed">—</strong><span class="stat-foot">Processing status: success</span></article>
+            <article class="stat-card"><span class="stat-label">PARTIAL / FAILED</span><strong data-stat="partial-failed">—</strong><span class="stat-foot">Review processing details</span></article>
+            <article class="stat-card accent-card"><span class="stat-label">HUMAN REVIEW</span><strong data-stat="human_review">—</strong><span class="stat-foot">Every current report requires review</span></article>
+          </div>
+          <div class="section-header"><div><div class="eyebrow">RECENT WORK</div><h2>Recent investigations</h2></div><button class="text-button" data-go="history">View all <span aria-hidden="true">→</span></button></div>
+          <div id="recent-list" class="table-card" aria-live="polite"><div class="loading-row">Loading local analyses…</div></div>
+          <div class="capability-strip"><div class="capability-icon">i</div><div><strong>Evidence first, conclusions second</strong><p>TRUSTLENS preserves observed signals and limitations. It does not produce a calibrated authenticity verdict; investigator review is required.</p></div></div>
+        </section>
+
+        <section id="view-new" class="view" aria-labelledby="new-heading">
+          <div class="page-heading"><div><div class="eyebrow">MEDIA INTAKE</div><h1 id="new-heading">New analysis</h1><p class="muted">Submit one supported image or video for the available local processing pipeline. WAV/MP3 can be recorded, but audio analysis is unavailable.</p></div></div>
+          <div class="upload-layout">
+            <div class="panel upload-panel">
+              <div class="panel-heading"><div><span class="step-kicker">01 / SOURCE MEDIA</span><h2>Select evidence</h2></div><span class="panel-icon">↥</span></div>
+              <label id="drop-zone" class="drop-zone" for="media-file" tabindex="0">
+                <span class="upload-glyph" aria-hidden="true">↑</span><strong>Drop a file here or <span>browse</span></strong>
+                <small>JPG, JPEG, PNG, WEBP · MP4, MOV, AVI · up to 100 MiB</small>
+                <input id="media-file" type="file" accept=".jpg,.jpeg,.png,.webp,.mp4,.mov,.avi,.wav,.mp3" hidden>
+              </label>
+              <div id="file-error" class="field-error hidden" role="alert"></div>
+              <div id="selected-file" class="selected-file hidden"></div>
+              <div id="preview" class="preview hidden"></div>
+              <div class="intake-note"><strong>What happens to this file?</strong><p>The original is staged temporarily for analysis and deleted when processing returns. This app saves the report and metadata in a local SQLite database; video frame artifacts are not retained.</p></div>
+              <label class="consent-row"><input id="evidence-consent" type="checkbox"><span>I understand the local retention behavior and confirm I am authorized to submit this media.</span></label>
+              <button id="analyze-button" class="button button-primary button-wide" disabled>Analyze media <span aria-hidden="true">→</span></button>
+              <div id="upload-state" class="upload-state hidden" role="status" aria-live="polite"></div>
+            </div>
+            <aside class="panel side-info">
+              <div class="eyebrow">PROCESSING NOTES</div><h2>What to expect</h2>
+              <ul class="note-list"><li><span class="note-number">01</span><div><strong>Validation & integrity</strong><small>Content is checked and the original bytes are hashed.</small></div></li><li><span class="note-number">02</span><div><strong>Available analysis</strong><small>Image descriptors or bounded video frame sampling may run.</small></div></li><li><span class="note-number">03</span><div><strong>Evidence report</strong><small>Observed signals, unavailable methods and limitations are preserved.</small></div></li></ul>
+              <div class="capability-warning"><span>!</span><p><strong>Detector availability</strong><br>No trained deepfake detector or calibrated fusion model is configured. Reports will abstain and require human review.</p></div>
+              <div class="audio-note"><strong>Audio is not analyzed</strong><p>WAV and MP3 may be recognized by the ingestion library, but audio forensic analysis is deferred.</p></div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="view-history" class="view" aria-labelledby="history-heading">
+          <div class="page-heading"><div><div class="eyebrow">LOCAL RECORDS</div><h1 id="history-heading">Investigations</h1><p class="muted">Persisted report records from this local workstation.</p></div><button class="button button-primary" data-go="new">＋ New analysis</button></div>
+          <div class="filter-bar"><label class="search-box"><span aria-hidden="true">⌕</span><input id="history-search" type="search" placeholder="Search filename or SHA-256" aria-label="Search investigations"></label><label class="filter-select"><span class="sr-only">Filter by status</span><select id="status-filter"><option value="">All statuses</option><option>SUCCESS</option><option>PARTIAL</option><option>FAILED</option><option>UNAVAILABLE</option></select></label><label class="filter-select"><span class="sr-only">Filter by media type</span><select id="media-filter"><option value="">All media</option><option value="image">Image</option><option value="video">Video</option><option value="audio">Audio</option></select></label></div>
+          <div id="history-error" class="notice notice-error hidden" role="alert"></div>
+          <div id="history-list" class="table-card" aria-live="polite"><div class="loading-row">Loading investigations…</div></div>
+          <div class="pagination"><span id="history-count" class="muted"></span><div><button id="page-prev" class="button button-secondary" disabled>Previous</button><button id="page-next" class="button button-secondary" disabled>Next</button></div></div>
+        </section>
+
+        <section id="view-detail" class="view" aria-labelledby="detail-heading">
+          <div class="page-heading"><div><button class="back-button" data-go="history">← Investigations</button><div class="eyebrow">ANALYSIS REPORT</div><h1 id="detail-heading">Investigation</h1><p id="detail-subtitle" class="muted"></p></div><div class="heading-actions"><button id="print-report" class="button button-secondary">Print report</button><button id="download-report" class="button button-secondary">↓ Export JSON</button><button id="delete-analysis" class="button button-danger">Delete record</button></div></div>
+          <div id="detail-error" class="notice notice-error hidden" role="alert"></div>
+          <div id="detail-content"></div>
+        </section>
+
+        <section id="view-system" class="view" aria-labelledby="system-heading">
+          <div class="page-heading"><div><div class="eyebrow">RUNTIME</div><h1 id="system-heading">System status</h1><p class="muted">Current local processing capabilities and their honest availability.</p></div><button id="refresh-system" class="button button-secondary">↻ Refresh checks</button></div>
+          <div id="system-error" class="notice notice-error hidden" role="alert"></div><div id="system-content" class="system-grid"><div class="loading-row">Checking local capabilities…</div></div>
+          <div class="retention-card"><div class="eyebrow">EVIDENCE HANDLING</div><h2>Local retention</h2><p>Source files and sampled frame files are temporary and deleted when the analysis service returns. SQLite stores report JSON and extracted metadata locally under the operating-system user profile. Deleting a record removes that report from the local history.</p></div>
+        </section>
+
+        <footer class="app-footer"><span>TRUSTLENS · LOCAL INVESTIGATION WORKSPACE</span><span>Decision support only · Human review required</span></footer>
+      </main>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
