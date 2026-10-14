@@ -1,0 +1,6 @@
+.venv/
+.trustlens-tmp/
+.trustlens-test-tmp/
+.trustlens-data/
+__pycache__/
+*.py[cod]
