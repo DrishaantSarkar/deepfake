@@ -1,0 +1,9 @@
+# UI skill definition for Antigravity
+# This skill tells Antigravity how to build the UI components.
+
+skill:
+  name: ui-components
+  description: Build React components styled with Tailwind CSS.
+  entrypoint: src/AppShell.tsx
+  language: typescript
+  framework: react

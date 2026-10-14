@@ -1,0 +1,23 @@
+# Guardrails for Antigravity repository
+# This file defines high‑level policies applied to the workspace.
+#
+# Example rules (placeholders):
+# - Enforce that all UI components are built with React and Tailwind.
+# - Disallow usage of deprecated JavaScript APIs.
+# - Require that every new component includes a unit test.
+#
+# The Antigravity engine reads this YAML to apply static analysis and runtime checks.
+
+rules:
+  - id: ui-react-tailwind
+    description: "All UI components must be implemented as React TSX files and styled with Tailwind CSS utilities."
+    severity: high
+    pattern: "*.tsx"
+  - id: no-deprecated-apis
+    description: "Disallow usage of deprecated DOM methods (e.g., document.write)."
+    severity: medium
+    pattern: "document.write"
+  - id: require-tests
+    description: "Every new component file must have a sibling __tests__ folder with at least one test file."
+    severity: low
+    pattern: "__tests__/*.test.tsx"

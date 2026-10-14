@@ -1,0 +1,13 @@
+# Workflow to build UI components
+# Antigravity will invoke this workflow to compile React+Tailwind assets.
+
+name: ui-build
+steps:
+  - name: install-deps
+    command: npm install
+  - name: build-tailwind
+    command: npx tailwindcss -i ./src/input.css -o ./static/app.css --minify
+  - name: compile-tsx
+    command: npx tsc -p .
+  - name: bundle
+    command: npx webpack --config webpack.config.js
