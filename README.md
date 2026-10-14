@@ -16,6 +16,8 @@ Open [http://127.0.0.1:8765](http://127.0.0.1:8765). The server binds only to `1
 
 Set `TRUSTLENS_PORT` to choose another port (1–65535); the bind address remains loopback-only.
 
+To clone the project from GitHub and run it on Windows, follow the [step-by-step tutorial](RUN_FROM_GITHUB.md).
+
 The local data file defaults to `%LOCALAPPDATA%\TRUSTLENS\analyses.sqlite3` on Windows and `$XDG_DATA_HOME/TRUSTLENS/analyses.sqlite3` (or `~/.local/share/TRUSTLENS/analyses.sqlite3`) elsewhere. Set `TRUSTLENS_DB_PATH` to choose a different SQLite file. Set `TRUSTLENS_TEMP_DIR` to choose where temporary media is staged. Originals and derived frame artifacts are removed after the service call; SQLite retains report JSON and extracted metadata, which may include sensitive media metadata. Deleting a history item deletes its report row.
 
 Run the software tests with the development test dependency:
