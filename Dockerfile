@@ -31,8 +31,8 @@ RUN mkdir -p /app/data /app/temp /app/checkpoints && \
     chown -R appuser:appuser /app
 
 # Copy application source code and checkpoints
-COPY --chown=appuser:appuser trustlens/ ./trustlens/
-COPY --chown=appuser:appuser checkpoints/ ./checkpoints/
+COPY --chown=appuser:appuser backend/trustlens/ ./trustlens/
+COPY --chown=appuser:appuser backend/checkpoints/ ./checkpoints/
 
 # Default runtime configuration
 ENV TRUSTLENS_HOST=0.0.0.0 \
