@@ -51,7 +51,8 @@ EXPOSE 8765
 
 # Container healthcheck using loopback API
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f "http://127.0.0.1:${TRUSTLENS_PORT:-8765}/api/health" || exit 1
+    CMD curl -f "http://127.0.0.1:${PORT:-${TRUSTLENS_PORT:-8765}}/api/health" || exit 1
 
 # Production entrypoint
 CMD ["python", "-m", "trustlens.web"]
+
