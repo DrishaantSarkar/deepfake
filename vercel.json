@@ -1,8 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
+  "framework": null,
   "cleanUrls": true,
-  "outputDirectory": "trustlens/static",
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/static",
   "rewrites": [
     {
       "source": "/static/:match*",

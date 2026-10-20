@@ -29,38 +29,27 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -d "DEEPFAKE--Final_Integrated" ]; then
-            cd DEEPFAKE--Final_Integrated
-          fi
+          cd backend
           pip install -r requirements-dev.txt
 
       - name: Static asset syntax verification
         run: |
-          if [ -d "DEEPFAKE--Final_Integrated" ]; then
-            cd DEEPFAKE--Final_Integrated
-          fi
-          node --check trustlens/static/app.js
+          node --check frontend/static/app.js
 
       - name: Run unit tests
         run: |
-          if [ -d "DEEPFAKE--Final_Integrated" ]; then
-            cd DEEPFAKE--Final_Integrated
-          fi
+          cd backend
           export TRUSTLENS_TEMP_DIR="$PWD/.trustlens-test-tmp"
           python -m unittest discover -s tests -v
 
       - name: Run process restart & persistence smoke test
         run: |
-          if [ -d "DEEPFAKE--Final_Integrated" ]; then
-            cd DEEPFAKE--Final_Integrated
-          fi
+          cd backend
           python tests/http_restart_smoke.py
 
       - name: Run HTTP smoke test with live loopback server
         run: |
-          if [ -d "DEEPFAKE--Final_Integrated" ]; then
-            cd DEEPFAKE--Final_Integrated
-          fi
+          cd backend
           export TRUSTLENS_PORT=8765
           export TRUSTLENS_DB_PATH="$PWD/.trustlens-test-tmp/smoke.sqlite3"
           export TRUSTLENS_TEMP_DIR="$PWD/.trustlens-test-tmp/smoke-media"
