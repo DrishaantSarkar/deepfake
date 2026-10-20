@@ -65,6 +65,26 @@
               <div id="file-error" class="field-error hidden" role="alert"></div>
               <div id="selected-file" class="selected-file hidden"></div>
               <div id="preview" class="preview hidden"></div>
+              <div class="demo-samples-section">
+                <div class="demo-samples-header">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+                    <div>
+                      <span class="step-kicker">OR CHOOSE A DEMO TEST SAMPLE</span>
+                      <h3>Judge Verification Samples</h3>
+                      <p>Click any verified fixture to evaluate the pipeline with real or synthetic media.</p>
+                    </div>
+                    <div class="demo-filter-tabs" id="demo-filter-tabs">
+                      <button type="button" class="demo-tab active" data-filter="all">All (16)</button>
+                      <button type="button" class="demo-tab" data-filter="video">🎥 Videos (4)</button>
+                      <button type="button" class="demo-tab" data-filter="image">🖼️ Photos (8)</button>
+                      <button type="button" class="demo-tab" data-filter="audio">🎙️ Audio (4)</button>
+                    </div>
+                  </div>
+                </div>
+                <div id="demo-samples-grid" class="demo-samples-container">
+                  <span class="muted">Loading test samples...</span>
+                </div>
+              </div>
               <div class="intake-note"><strong>What happens to this file?</strong><p>The original is staged temporarily for analysis and deleted when processing returns. This app saves the report and metadata in a local SQLite database; video frame artifacts are not retained.</p></div>
               <label class="consent-row"><input id="evidence-consent" type="checkbox"><span>I understand the local retention behavior and confirm I am authorized to submit this media.</span></label>
               <button id="analyze-button" class="button button-primary button-wide" disabled>Analyze media <span aria-hidden="true">→</span></button>
@@ -73,8 +93,8 @@
             <aside class="panel side-info">
               <div class="eyebrow">PROCESSING NOTES</div><h2>What to expect</h2>
               <ul class="note-list"><li><span class="note-number">01</span><div><strong>Validation & integrity</strong><small>Content is checked and the original bytes are hashed.</small></div></li><li><span class="note-number">02</span><div><strong>Available analysis</strong><small>Image descriptors or bounded video frame sampling may run.</small></div></li><li><span class="note-number">03</span><div><strong>Evidence report</strong><small>Observed signals, unavailable methods and limitations are preserved.</small></div></li></ul>
-              <div class="capability-warning"><span>!</span><p><strong>Detector availability</strong><br>No trained deepfake detector or calibrated fusion model is configured. Reports will abstain and require human review.</p></div>
-              <div class="audio-note"><strong>Audio is not analyzed</strong><p>WAV and MP3 may be recognized by the ingestion library, but audio forensic analysis is deferred.</p></div>
+              <div id="detector-status-card" class="capability-warning"><span>!</span><p id="detector-status-text"><strong>Detector status</strong><br>Checking configured model runtime…</p></div>
+              <div class="audio-beta-card audio-beta-banner"><strong>AUDIO DETECTION — BETA</strong><p>Audio detection is experimental. Results may contain false positives or false negatives and should not be treated as definitive proof of authenticity.</p></div>
             </aside>
           </div>
         </section>
@@ -94,8 +114,27 @@
         </section>
 
         <section id="view-system" class="view" aria-labelledby="system-heading">
-          <div class="page-heading"><div><div class="eyebrow">RUNTIME</div><h1 id="system-heading">System status</h1><p class="muted">Current local processing capabilities and their honest availability.</p></div><button id="refresh-system" class="button button-secondary">↻ Refresh checks</button></div>
-          <div id="system-error" class="notice notice-error hidden" role="alert"></div><div id="system-content" class="system-grid"><div class="loading-row">Checking local capabilities…</div></div>
+          <div class="page-heading"><div><div class="eyebrow">RUNTIME &amp; DIAGNOSTICS</div><h1 id="system-heading">System status</h1><p class="muted">Secure diagnostic status and honest runtime capability telemetry.</p></div><div class="heading-actions"><button id="refresh-system" class="button button-secondary">↻ Refresh checks</button><button id="lock-admin" class="button button-secondary hidden">Lock Admin</button></div></div>
+          <div id="system-error" class="notice notice-error hidden" role="alert"></div>
+          <div id="admin-auth-panel" class="panel admin-auth-panel">
+            <div class="panel-heading">
+              <div><span class="step-kicker">ADMINISTRATOR ACCESS REQUIRED</span><h2>Privileged Diagnostic Console</h2></div>
+            </div>
+            <p class="muted">Detailed pipeline telemetry, model weights inspection, database statistics, and operational errors are restricted to administrators.</p>
+            <div id="admin-auth-error" class="notice notice-error hidden" role="alert"></div>
+            <form id="admin-auth-form" class="admin-auth-form">
+              <label for="admin-key-input"><strong>Admin Access Key</strong></label>
+              <input id="admin-key-input" type="password" placeholder="Enter TRUSTLENS_ADMIN_KEY..." required autocomplete="off">
+              <button type="submit" class="button button-primary">Authenticate as Admin</button>
+            </form>
+          </div>
+          <div id="admin-status-container" class="hidden">
+            <div class="admin-header-row">
+              <span class="badge badge-success">● AUTHENTICATED ADMINISTRATOR SESSION</span>
+              <span class="muted" id="admin-session-time"></span>
+            </div>
+            <div id="system-content" class="system-grid"></div>
+          </div>
           <div class="retention-card"><div class="eyebrow">EVIDENCE HANDLING</div><h2>Local retention</h2><p>Source files and sampled frame files are temporary and deleted when the analysis service returns. SQLite stores report JSON and extracted metadata locally under the operating-system user profile. Deleting a record removes that report from the local history.</p></div>
         </section>
 

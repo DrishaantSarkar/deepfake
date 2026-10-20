@@ -6,6 +6,8 @@ import {
   CapabilitiesResponse,
   HealthResponse,
   ApiError,
+  TestSample,
+  TestSamplesResponse,
 } from "../types/api";
 
 export class TrustlensApiError extends Error {
@@ -127,5 +129,17 @@ export const api = {
 
   getReportDownloadUrl(analysisId: string): string {
     return `/api/analyses/${encodeURIComponent(analysisId)}/report`;
+  },
+
+  async getTestSamples(): Promise<TestSamplesResponse> {
+    return request<TestSamplesResponse>("/api/test-samples");
+  },
+
+  async getTestSampleBlob(sampleId: string): Promise<Blob> {
+    const response = await fetch(`/api/test-samples/${encodeURIComponent(sampleId)}/file`);
+    if (!response.ok) {
+      throw new TrustlensApiError("Failed to fetch test sample file", "file_not_found", response.status);
+    }
+    return response.blob();
   },
 };

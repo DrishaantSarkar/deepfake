@@ -1,0 +1,265 @@
+{
+  "schema_version": "1.0",
+  "generator": "tests/fixtures/multimodal/generate_fixtures.py",
+  "random_seed": 42,
+  "sample_count": 16,
+  "modalities": {
+    "image": 8,
+    "video": 4,
+    "audio": 4
+  },
+  "beta_disclaimer": "AUDIO DETECTION \u2014 BETA: Audio detection is experimental. Results may contain false positives or false negatives and should not be treated as definitive proof of authenticity.",
+  "samples": [
+    {
+      "sample_id": "img_real_01",
+      "file_name": "img_real_portrait.jpg",
+      "relative_path": "media/img_real_portrait.jpg",
+      "modality": "image",
+      "ground_truth": "real",
+      "size_bytes": 181203,
+      "sha256": "9b7f7aa548d6e83699d9bb4bcded51df5a74d9e5fa29d1f5acacfaab7da16fcd",
+      "provenance": "Authentic high-resolution photographic portrait sourced from Unsplash (natural daylight, genuine skin texture, optical camera lens).",
+      "generation_method": "optical_dslr_camera_capture",
+      "transformations": [
+        "high_quality_jpeg_rgb"
+      ],
+      "expected_test_behavior": "Classified as authentic photographic portrait with natural spectral decay."
+    },
+    {
+      "sample_id": "img_real_02",
+      "file_name": "img_real_nature.jpg",
+      "relative_path": "media/img_real_nature.jpg",
+      "modality": "image",
+      "ground_truth": "real",
+      "size_bytes": 84146,
+      "sha256": "fb4af5ddf0d99cb5a2de5a51ef2dbce1d11b15a208f8d07e7abc889f389038a5",
+      "provenance": "Authentic landscape photograph of river and pine forest in Yosemite Valley sourced from Unsplash.",
+      "generation_method": "optical_dslr_landscape_capture",
+      "transformations": [
+        "natural_optical_exposure",
+        "high_quality_jpeg"
+      ],
+      "expected_test_behavior": "Natural 1/f frequency distribution, optical depth of field, authentic sensor noise."
+    },
+    {
+      "sample_id": "img_real_03",
+      "file_name": "img_real_urban.jpg",
+      "relative_path": "media/img_real_urban.jpg",
+      "modality": "image",
+      "ground_truth": "real",
+      "size_bytes": 115693,
+      "sha256": "59337f1022daa7148b0b94d66eed0c48d5a215862f598e593e944a8c0f8bcec2",
+      "provenance": "Authentic urban architectural photograph of modern glass skyscraper sourced from Unsplash.",
+      "generation_method": "optical_architectural_photography",
+      "transformations": [
+        "optical_glass_reflection",
+        "high_quality_jpeg"
+      ],
+      "expected_test_behavior": "Authentic linear geometric perspective, genuine optical sensor response."
+    },
+    {
+      "sample_id": "img_real_04",
+      "file_name": "img_real_still_life.jpg",
+      "relative_path": "media/img_real_still_life.jpg",
+      "modality": "image",
+      "ground_truth": "real",
+      "size_bytes": 33952,
+      "sha256": "3dd5d37e14483948f4c5111b4ac56f815a9d79cf94be653f237906b99b323653",
+      "provenance": "Authentic studio still-life photograph of vintage camera equipment sourced from Unsplash.",
+      "generation_method": "optical_studio_photography",
+      "transformations": [
+        "studio_lighting",
+        "high_quality_jpeg"
+      ],
+      "expected_test_behavior": "High authentic image confidence, natural material reflectance and shadows."
+    },
+    {
+      "sample_id": "img_ai_01",
+      "file_name": "img_ai_portrait.jpg",
+      "relative_path": "media/img_ai_portrait.jpg",
+      "modality": "image",
+      "ground_truth": "synthetic",
+      "size_bytes": 696736,
+      "sha256": "44eb6f04d6dbed66c26a0b2c30d601b2ddcc67286684f54413f10eb5ddbe4f05",
+      "provenance": "State-of-the-art photorealistic generative AI portrait generated via diffusion model.",
+      "generation_method": "generative_diffusion_portrait_synthesis",
+      "transformations": [
+        "latent_diffusion_upscaling",
+        "photorealistic_synthesis"
+      ],
+      "expected_test_behavior": "Model evaluates synthetic facial features and subtle latent generation characteristics."
+    },
+    {
+      "sample_id": "img_ai_02",
+      "file_name": "img_ai_cinematic.jpg",
+      "relative_path": "media/img_ai_cinematic.jpg",
+      "modality": "image",
+      "ground_truth": "synthetic",
+      "size_bytes": 800575,
+      "sha256": "b8f336889ca424fa3623be05974840e04c759cb38c3dbec4abe4610a48bdf0cb",
+      "provenance": "State-of-the-art photorealistic generative AI fantasy cliffside castle generated via diffusion model.",
+      "generation_method": "generative_diffusion_landscape_synthesis",
+      "transformations": [
+        "volumetric_diffusion_lighting",
+        "photorealistic_synthesis"
+      ],
+      "expected_test_behavior": "Elevated synthetic likelihood due to synthetic deconvolution and generative geometry."
+    },
+    {
+      "sample_id": "img_ai_03",
+      "file_name": "img_ai_cityscape.jpg",
+      "relative_path": "media/img_ai_cityscape.jpg",
+      "modality": "image",
+      "ground_truth": "synthetic",
+      "size_bytes": 1115158,
+      "sha256": "ee81e57f419bcc758bece68713a5954158850fe7360fbfb681d74e8324cd6ff6",
+      "provenance": "State-of-the-art photorealistic generative AI futuristic cityscape with holographic reflections.",
+      "generation_method": "generative_diffusion_urban_synthesis",
+      "transformations": [
+        "synthetic_neon_rendering",
+        "ai_reflection_synthesis"
+      ],
+      "expected_test_behavior": "Evaluates synthetic reflections, neon text artifacts, and generative perspective."
+    },
+    {
+      "sample_id": "img_ai_04",
+      "file_name": "img_ai_elderly.jpg",
+      "relative_path": "media/img_ai_elderly.jpg",
+      "modality": "image",
+      "ground_truth": "synthetic",
+      "size_bytes": 759927,
+      "sha256": "daa7c4643999a9b68991246eb6cb522f90ec96099d4ef9045f495825a2986d6c",
+      "provenance": "State-of-the-art photorealistic generative AI portrait of an elderly man with glasses.",
+      "generation_method": "generative_diffusion_skin_synthesis",
+      "transformations": [
+        "micro_texture_generation",
+        "ai_lens_glare_synthesis"
+      ],
+      "expected_test_behavior": "Synthetic skin micro-texture and generative lens reflections."
+    },
+    {
+      "sample_id": "vid_real_01",
+      "file_name": "non_ai_generated_video.mp4",
+      "relative_path": "media/non_ai_generated_video.mp4",
+      "modality": "video",
+      "ground_truth": "real",
+      "size_bytes": 39715388,
+      "sha256": "07e0b7c3da59b871de64c8817236f22474d5920bd11a4c9d072bb4e3970ce342",
+      "provenance": "Authentic non-AI-generated real-world video recording provided for validation testing (1080p, 24fps optical camera capture).",
+      "generation_method": "optical_camera_video_capture",
+      "transformations": [
+        "h264_aac_mp4"
+      ],
+      "expected_test_behavior": "Ingests cleanly as authentic video; metadata extraction and temporal consistency verification."
+    },
+    {
+      "sample_id": "vid_real_02",
+      "file_name": "non_ai_video_clip.mp4",
+      "relative_path": "media/non_ai_video_clip.mp4",
+      "modality": "video",
+      "ground_truth": "real",
+      "size_bytes": 776011,
+      "sha256": "99d17ae3e562e679099f37f11c2b307249cda93f3998ebaf98a3689f9ca843d3",
+      "provenance": "Authentic non-AI-generated video sequence excerpt (3.0s, 72 frames) for fast boundary validation.",
+      "generation_method": "optical_camera_video_excerpt",
+      "transformations": [
+        "short_duration_segment_3s"
+      ],
+      "expected_test_behavior": "Temporal measurement shows consistent inter-frame optical flow without synthesis artifacts."
+    },
+    {
+      "sample_id": "vid_ai_01",
+      "file_name": "ai_generated_video.mp4",
+      "relative_path": "media/ai_generated_video.mp4",
+      "modality": "video",
+      "ground_truth": "synthetic",
+      "size_bytes": 9204845,
+      "sha256": "a298b2d5a91f722c8089d0f1291b7a89f6ad3684f4da983e58cc82a9997a26bd",
+      "provenance": "Authentic generative AI video provided for deepfake video detection validation (720x1280, 24fps synthetic synthesis).",
+      "generation_method": "generative_neural_video_synthesis",
+      "transformations": [
+        "latent_diffusion_video_rendering",
+        "mp4_encoding"
+      ],
+      "expected_test_behavior": "Ingests cleanly as synthetic video; temporal analysis evaluates inter-frame generative artifacts."
+    },
+    {
+      "sample_id": "vid_ai_02",
+      "file_name": "ai_video_clip.mp4",
+      "relative_path": "media/ai_video_clip.mp4",
+      "modality": "video",
+      "ground_truth": "synthetic",
+      "size_bytes": 1197320,
+      "sha256": "69fb8c437ac905ef42d59681fec648007d062563c54ee42a3ddc4bf5f8c67842",
+      "provenance": "Authentic generative AI video sequence excerpt (2.0s, 48 frames) testing high-frequency latent temporal jitter.",
+      "generation_method": "generative_neural_video_excerpt",
+      "transformations": [
+        "short_duration_segment_2s"
+      ],
+      "expected_test_behavior": "Tests inter-frame latent divergence and boundary frame extraction under generative synthesis."
+    },
+    {
+      "sample_id": "aud_real_01",
+      "file_name": "aud_real_speech_sim.wav",
+      "relative_path": "media/aud_real_speech_sim.wav",
+      "modality": "audio",
+      "ground_truth": "real",
+      "size_bytes": 64044,
+      "sha256": "840610f18b20e049f8566846ab46de11db6ac977f09cf1c53a41473dadbd8a2a",
+      "provenance": "Synthetic simulation of natural vocal tract harmonic formant structure (130 Hz F0 + F1-F3 formants).",
+      "generation_method": "acoustic_formant_harmonic_synthesis",
+      "transformations": [
+        "16khz_16bit_mono_pcm",
+        "hanning_envelope"
+      ],
+      "expected_test_behavior": "Recognized as valid WAV; explicitly labeled with AUDIO DETECTION \u2014 BETA disclaimer."
+    },
+    {
+      "sample_id": "aud_real_02",
+      "file_name": "aud_real_ambient_noise.wav",
+      "relative_path": "media/aud_real_ambient_noise.wav",
+      "modality": "audio",
+      "ground_truth": "real",
+      "size_bytes": 64044,
+      "sha256": "a509a2ffb14b5e1cb7f35a6e360542195933f98a5e666a63ae143d605ce80416",
+      "provenance": "Simulated ambient environmental audio with natural 1/f spectral rolloff.",
+      "generation_method": "pink_noise_stochastic_simulation",
+      "transformations": [
+        "16khz_16bit_mono_pcm"
+      ],
+      "expected_test_behavior": "Recognized as valid ambient WAV; marked with BETA status and abstention."
+    },
+    {
+      "sample_id": "aud_ai_01",
+      "file_name": "aud_ai_vocoder_synthetic.wav",
+      "relative_path": "media/aud_ai_vocoder_synthetic.wav",
+      "modality": "audio",
+      "ground_truth": "synthetic",
+      "size_bytes": 64044,
+      "sha256": "3a2d1f55f20a1dbdbbf70c43d606793266b6261551b8e63cf3f5de22b81c77d4",
+      "provenance": "Simulated neural vocoder / phase-quantized synthetic speech artifact.",
+      "generation_method": "pitch_quantized_harmonic_buzz",
+      "transformations": [
+        "16khz_16bit_mono_pcm",
+        "high_frequency_aliasing"
+      ],
+      "expected_test_behavior": "BETA audio detector extracts spectral features; reports experimental disclaimer."
+    },
+    {
+      "sample_id": "aud_ai_02",
+      "file_name": "aud_ai_cloned_artefact.wav",
+      "relative_path": "media/aud_ai_cloned_artefact.wav",
+      "modality": "audio",
+      "ground_truth": "synthetic",
+      "size_bytes": 64044,
+      "sha256": "b179126207ef1fdf9f999e0851679ab3f827857d7b0c308d5fc1638670fcb691",
+      "provenance": "Simulated voice-cloning sample exhibiting comb filtering from imperfect phase alignment.",
+      "generation_method": "comb_filtered_phase_mismatch",
+      "transformations": [
+        "16khz_16bit_mono_pcm",
+        "delay_comb_filter"
+      ],
+      "expected_test_behavior": "Spectral analysis identifies comb notches; explicitly marked AUDIO DETECTION \u2014 BETA."
+    }
+  ]
+}

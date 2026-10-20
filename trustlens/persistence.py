@@ -39,6 +39,7 @@ class AnalysisStore:
 
     def __init__(self, database_path: str | Path):
         self.path = Path(database_path).expanduser().resolve()
+        self.db_path = self.path
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._initialize()
 

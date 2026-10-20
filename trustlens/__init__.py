@@ -24,6 +24,8 @@ _EXPORTS = {
     "AnalysisReport": ("service", "AnalysisReport"),
     "analyze_upload": ("service", "analyze_upload"),
     "validate_analysis_report": ("service", "validate_analysis_report"),
+    "PyTorchModelDetector": ("detector_adapter", "PyTorchModelDetector"),
+    "load_model_detector": ("detector_adapter", "load_model_detector"),
 }
 
 __all__ = list(_EXPORTS)

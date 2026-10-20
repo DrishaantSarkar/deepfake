@@ -146,8 +146,10 @@ def _image_records(report: dict[str, Any], *, parent_video_id: str | None = None
     channels = report.get("evidence")
     if not isinstance(channels, list):
         raise ValueError("Image report evidence must be a list.")
-    detector = report.get("detector") if isinstance(report.get("detector"), dict) else {}
-    model = detector.get("model") if isinstance(detector.get("model"), dict) else None
+    detector_raw = report.get("detector")
+    detector: dict[str, Any] = detector_raw if isinstance(detector_raw, dict) else {}
+    model_raw = detector.get("model")
+    model: dict[str, Any] | None = model_raw if isinstance(model_raw, dict) else None
     label_space = detector.get("label_space")
     detector_correlation_group = detector.get("correlation_group")
     detector_status = detector.get("status")
@@ -181,12 +183,13 @@ def _image_records(report: dict[str, Any], *, parent_video_id: str | None = None
             if not isinstance(signal, dict):
                 raise ValueError("Successful whole-image evidence requires a measured signal object.")
             prediction = signal.get("predicted_label")
-            labels = model.get("output_labels") if model else None
-            if prediction is not None and prediction not in labels:
+            raw_labels = model.get("output_labels") if model else None
+            labels_list = raw_labels if isinstance(raw_labels, list) else []
+            if prediction is not None and prediction not in labels_list:
                 raise ValueError("Predicted label must be declared in model output_labels.")
             raw_scores = signal.get("raw_scores")
             if raw_scores is not None and (not isinstance(raw_scores, dict) or any(
-                key not in labels or not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value)
+                key not in labels_list or not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value)
                 for key, value in raw_scores.items()
             )):
                 raise ValueError("Raw detector scores must be finite numeric values for declared model labels.")

@@ -8,21 +8,28 @@ Video probing is optional and uses ffprobe when installed; it never decodes fram
 from __future__ import annotations
 
 import hashlib
+import importlib
 import json
 import math
 import os
 import shutil
 import subprocess
 import tempfile
-import uuid
 import unicodedata
+import uuid
 import warnings
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import BinaryIO, Any
+from typing import Any, BinaryIO
 
 from PIL import ExifTags, Image, ImageOps, UnidentifiedImageError
+
+np: Any = None
+try:
+    np = importlib.import_module("numpy")
+except (ImportError, ModuleNotFoundError):
+    np = None
 
 
 class MediaType(str, Enum):
@@ -159,10 +166,20 @@ def _probe_video(path: Path, limits: MediaLimits) -> tuple[dict[str, Any], list[
         return {}, ["ffprobe is unavailable; video stream metadata and decode status were not verified."]
     try:
         completed = subprocess.run(
-            [ffprobe, "-v", "error", "-show_entries",
-            "format=duration,format_name:format_tags:stream=codec_type,codec_name,width,height,avg_frame_rate,r_frame_rate,duration,nb_frames:stream_tags",
-             "-of", "json", str(path)],
-            capture_output=True, text=True, timeout=limits.probe_timeout_seconds, check=False,
+            [
+                ffprobe,
+                "-v",
+                "error",
+                "-show_entries",
+                "format=duration,format_name:format_tags:stream=codec_type,codec_name,width,height,avg_frame_rate,r_frame_rate,duration,nb_frames:stream_tags",
+                "-of",
+                "json",
+                str(path),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=limits.probe_timeout_seconds,
+            check=False,
         )
     except subprocess.TimeoutExpired:
         return {}, ["ffprobe timed out; video stream metadata was not verified."]
@@ -171,7 +188,7 @@ def _probe_video(path: Path, limits: MediaLimits) -> tuple[dict[str, Any], list[
     try:
         data = json.loads(completed.stdout)
         if not isinstance(data, dict):
-            raise ValueError("ffprobe JSON root must be an object")
+            raise TypeError("ffprobe JSON root must be an object")
         streams = data.get("streams", [])
         format_data = data.get("format", {})
         if (
@@ -217,7 +234,7 @@ def _probe_video(path: Path, limits: MediaLimits) -> tuple[dict[str, Any], list[
             "video_stream_tags": stream_tags,
             "video_stream_tags_status": stream_tags_status,
         }
-        violations = []
+        violations: list[str] = []
         violations.extend(item for item in (container_tags_warning, stream_tags_warning) if item)
         if duration is None:
             violations.append("Video duration is unavailable.")
@@ -315,21 +332,23 @@ def ingest_media(
                             raise IngestionError("Image content format does not match its filename extension.")
                         image.load()
                         exif_error = None
+                        exif_tags: dict[Any, Any] = {}
                         try:
-                            exif = image.getexif()
-                            exif_status = "DETECTED" if exif else "MISSING"
+                            raw_exif = image.getexif()
+                            if raw_exif:
+                                exif_tags = dict(raw_exif)
+                                exif_status = "DETECTED"
+                            else:
+                                exif_status = "MISSING"
                         except (ValueError, TypeError, OSError):
-                            exif = {}
                             exif_status = "ERROR"
                             exif_error = "Image EXIF metadata could not be parsed; pixel decoding succeeded."
-                        orientation = exif.get(274)
+                        orientation = exif_tags.get(274)
                         oriented = ImageOps.exif_transpose(image)
                         alpha_present = "A" in oriented.getbands() or "transparency" in oriented.info
                         if oriented.mode in {"I;16", "I;16B", "I;16L", "I"}:
-                            try:
-                                import numpy as np
-                            except ImportError as exc:
-                                raise IngestionError("NumPy is required to normalize high-bit-depth grayscale images.") from exc
+                            if np is None:
+                                raise IngestionError("NumPy is required to normalize high-bit-depth grayscale images.")
                             values = np.asarray(oriented)
                             low, high = int(values.min()), int(values.max())
                             if low < 0 or high > 65535:
@@ -350,8 +369,8 @@ def ingest_media(
                         oriented.save(normalized_path, format="PNG", optimize=False)
                         result.normalized_image_path = str(normalized_path)
                         exif_by_name = {
-                            ExifTags.TAGS.get(int(key), str(key)): str(value)
-                            for key, value in exif.items() if key != 37500
+                            ExifTags.TAGS.get(key, str(key)) if isinstance(key, int) else str(key): str(value)
+                            for key, value in exif_tags.items() if key != 37500
                         }
                         named_exif = {
                             name: exif_by_name[name]
@@ -364,7 +383,7 @@ def ingest_media(
                             "height": height,
                             "mode": image.mode,
                             "exif_orientation": orientation,
-                            "exif": {str(k): str(v) for k, v in exif.items() if k != 37500},
+                            "exif": {str(k): str(v) for k, v in exif_tags.items() if k != 37500},
                             "exif_named": named_exif,
                             "exif_status": exif_status,
                             "metadata_status": "PARTIAL" if exif_error else "DETECTED",
@@ -407,3 +426,15 @@ def ingest_media(
         if directory is not None:
             directory.cleanup()
         raise
+
+
+def ingest_upload(
+    content: bytes,
+    filename: str,
+    *,
+    limits: MediaLimits | None = None,
+) -> IngestedMedia:
+    """Convenience helper to ingest raw in-memory bytes as an uploaded file."""
+    import io
+    return ingest_media(io.BytesIO(content), filename, limits=limits)
+

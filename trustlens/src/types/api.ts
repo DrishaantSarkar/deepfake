@@ -174,3 +174,21 @@ export interface ApiError {
   code: string;
   message: string;
 }
+
+export interface TestSample {
+  sample_id: string;
+  file_name: string;
+  modality: "image" | "video" | "audio";
+  ground_truth: "real" | "synthetic";
+  description?: string;
+  expected_outcome?: string;
+  relative_path?: string;
+  sha256?: string;
+}
+
+export interface TestSamplesResponse {
+  schema_version: string;
+  sample_count: number;
+  beta_disclaimer?: string;
+  samples: TestSample[];
+}

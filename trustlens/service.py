@@ -13,6 +13,7 @@ import uuid
 import platform
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, BinaryIO
 
 from .evidence_fusion import fuse_reports
@@ -179,6 +180,16 @@ class AnalysisReport:
         report["evidence_graph"] = build_evidence_graph(report)
         return report
 
+    def __getitem__(self, key: str) -> Any:
+        return self.to_dict()[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.to_dict()
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self.to_dict().get(key, default)
+
+
 
 def _status(media_status: ProcessingStatus, analysis_status: ProcessingStatus) -> ProcessingStatus:
     statuses = (media_status, analysis_status)
@@ -192,7 +203,35 @@ def _status(media_status: ProcessingStatus, analysis_status: ProcessingStatus) -
 
 
 def _unavailable_audio_report(media: IngestedMedia) -> AnalysisReport:
-    reason = "Audio forensic analysis is deferred; this upload was validated but not analyzed."
+    from .audio_analysis import AUDIO_BETA_LABEL, AUDIO_BETA_WARNING, analyze_audio
+
+    audio_assessment = analyze_audio(media)
+    reason = (
+        "Audio forensic analysis is experimental and deferred; automated detection is currently "
+        "unavailable, and the available evidence is insufficient for a reliable authenticity assessment."
+    )
+    analysis_dict = {
+        "kind": "audio",
+        "status": ProcessingStatus.UNAVAILABLE.value,
+        "result": None,
+        "beta_status": AUDIO_BETA_LABEL,
+        "beta_warning": AUDIO_BETA_WARNING,
+        "technical_metadata": audio_assessment.technical_metadata,
+        "signal_descriptors": audio_assessment.signal_descriptors,
+    }
+    limitations = [
+        AUDIO_BETA_LABEL,
+        AUDIO_BETA_WARNING,
+        reason,
+        *audio_assessment.limitations,
+    ]
+    deduped_limitations: list[str] = []
+    seen: set[str] = set()
+    for item in limitations:
+        if item not in seen:
+            seen.add(item)
+            deduped_limitations.append(item)
+
     return AnalysisReport(
         schema_version=REPORT_SCHEMA_VERSION,
         report_id=str(uuid.uuid4()),
@@ -212,15 +251,15 @@ def _unavailable_audio_report(media: IngestedMedia) -> AnalysisReport:
             "warnings": list(media.warnings),
             "errors": list(media.errors),
         },
-        analysis={"kind": "audio", "status": ProcessingStatus.UNAVAILABLE.value, "result": None},
+        analysis=analysis_dict,
         fusion=None,
         uncertainty={
             "calibration_status": "NOT_APPLICABLE",
             "uncertainty_status": "NOT_ASSESSED",
             "abstention_reason": reason,
         },
-        limitations=[reason],
-        errors=[],
+        limitations=deduped_limitations,
+        errors=list(audio_assessment.errors),
     )
 
 
@@ -268,8 +307,8 @@ def _failed_report(media: IngestedMedia, stage: str) -> AnalysisReport:
 
 
 def analyze_upload(
-    source: BinaryIO,
-    filename: str,
+    source: BinaryIO | bytes | IngestedMedia | Path | str,
+    filename: str | None = None,
     *,
     detector: ImageDetector | None = None,
     limits: MediaLimits | None = None,
@@ -277,11 +316,25 @@ def analyze_upload(
 ) -> AnalysisReport:
     """Run the available upload→analysis→fusion workflow and return a report.
 
-    The caller owns ``source``. The staged original and temporary derived files
-    are removed before this function returns. Invalid uploads raise
-    ``IngestionError`` for the caller to map to its own API error contract.
+    Accepts a BinaryIO, raw bytes, file Path, or existing IngestedMedia.
+    The staged original and temporary derived files are cleaned up if owned.
     """
-    media = ingest_media(source, filename, limits=limits)
+    import io
+
+    if isinstance(source, IngestedMedia):
+        media = source
+    elif isinstance(source, (str, Path)):
+        p = Path(source)
+        resolved_name = filename or p.name
+        with p.open("rb") as f:
+            media = ingest_media(f, resolved_name, limits=limits)
+    elif isinstance(source, (bytes, bytearray)):
+        resolved_name = filename or "upload"
+        media = ingest_media(io.BytesIO(source), resolved_name, limits=limits)
+    else:
+        resolved_name = str(filename or getattr(source, "name", "upload") or "upload")
+        media = ingest_media(source, resolved_name, limits=limits)
+
     stage = "analysis"
     try:
         if media.detected_type == MediaType.AUDIO:
@@ -289,25 +342,44 @@ def analyze_upload(
             validate_analysis_report(report)
             return report
 
+        service_errors: list[str] = []
+        assessment_obj: Any
         if media.detected_type == MediaType.IMAGE:
-            assessment = analyze_image(media, detector=detector)
+            try:
+                assessment_img = analyze_image(media, detector=detector)
+            except Exception as exc:
+                assessment_img = analyze_image(media, detector=None)
+                service_errors.append(f"Primary detector inference failed ({type(exc).__name__}); falling back to deterministic frequency descriptors.")
+            if detector is None or assessment_img.detector.get("status") in ("UNAVAILABLE", "FAILED"):
+                inconclusive_msg = "INCONCLUSIVE — Automated detection is currently unavailable, and the available evidence is insufficient for a reliable authenticity assessment."
+                if inconclusive_msg not in assessment_img.limitations:
+                    assessment_img.limitations.append(inconclusive_msg)
             analysis_kind = "image"
+            assessment_obj = assessment_img
         elif media.detected_type == MediaType.VIDEO:
-            assessment = analyze_video(media, detector=detector, config=video_config)
+            try:
+                assessment_vid = analyze_video(media, detector=detector, config=video_config)
+            except Exception as exc:
+                assessment_vid = analyze_video(media, detector=None, config=video_config)
+                service_errors.append(f"Video detector inference failed ({type(exc).__name__}); falling back to metadata inspection.")
+            inconclusive_msg = "INCONCLUSIVE — Automated detection is currently unavailable, and the available evidence is insufficient for a reliable authenticity assessment."
+            if inconclusive_msg not in assessment_vid.limitations:
+                assessment_vid.limitations.append(inconclusive_msg)
             analysis_kind = "video"
+            assessment_obj = assessment_vid
         else:  # Defensive guard for future media types.
             raise ValueError(f"Unsupported analysis media type: {media.detected_type.value}")
 
-        assessment_dict = assessment.to_dict()
+        assessment_dict = assessment_obj.to_dict()
         assessment_dict["provenance"] = assess_provenance(
             analysis_kind, media.metadata, parser_warnings=media.warnings,
         )
         stage = "fusion"
         fusion_dict = fuse_reports(assessment_dict).to_dict()
-        analysis_status = assessment.processing_status
+        analysis_status = assessment_obj.processing_status
         overall_status = _status(media.status, analysis_status)
-        limitations = list(getattr(assessment, "limitations", []))
-        errors = list(getattr(assessment, "errors", []))
+        limitations = list(getattr(assessment_obj, "limitations", []))
+        errors = list(getattr(assessment_obj, "errors", [])) + service_errors
         if analysis_kind == "video":
             limitations.append(
                 "Sampled frame artifacts are temporary and removed before this report is returned; artifact_reference values are report-local labels, not retrievable URLs."

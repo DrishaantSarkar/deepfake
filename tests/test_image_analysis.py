@@ -11,14 +11,23 @@ from trustlens.image_analysis import (
 from trustlens.ingestion import IngestionError, MediaType, ProcessingStatus, ingest_media
 
 
-def png_bytes():
-    image = Image.new("RGB", (48, 32))
-    for y in range(32):
-        for x in range(48):
-            image.putpixel((x, y), ((x * 13) % 256, (y * 17) % 256, ((x + y) * 7) % 256))
+from pathlib import Path
+
+PHOTO_FIXTURE_PATH = (
+    Path(__file__).resolve().parent / "fixtures" / "multimodal" / "media" / "img_real_portrait.jpg"
+)
+
+
+def get_test_photo_bytes() -> bytes:
+    if PHOTO_FIXTURE_PATH.is_file():
+        return PHOTO_FIXTURE_PATH.read_bytes()
+    img = Image.new("RGB", (64, 64), (135, 160, 185))
     stream = io.BytesIO()
-    image.save(stream, format="PNG")
+    img.save(stream, format="JPEG")
     return stream.getvalue()
+
+
+png_bytes = get_test_photo_bytes
 
 
 class TestDetector:
@@ -45,7 +54,7 @@ class TestDetector:
 
 class ImageAnalysisTests(unittest.TestCase):
     def setUp(self):
-        self.media = ingest_media(io.BytesIO(png_bytes()), "scene.png")
+        self.media = ingest_media(io.BytesIO(get_test_photo_bytes()), "portrait.jpg")
 
     def tearDown(self):
         self.media.cleanup()

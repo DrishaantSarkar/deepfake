@@ -117,7 +117,14 @@ def _frequency_measurement(image: Image.Image, size: int = 32) -> EvidenceChanne
     gray = ImageOps.grayscale(image)
     gray.thumbnail((size, size), Image.Resampling.LANCZOS)
     sample = gray.resize((size, size), Image.Resampling.LANCZOS)
-    pixels = [[float(sample.getpixel((x, y))) - 127.5 for x in range(size)] for y in range(size)]
+    pixels = []
+    for y in range(size):
+        row = []
+        for x in range(size):
+            p_val = sample.getpixel((x, y))
+            num = float(p_val[0] if isinstance(p_val, (tuple, list)) else p_val)  # type: ignore[arg-type]
+            row.append(num - 127.5)
+        pixels.append(row)
     transform = _dct_matrix(size)
     # Separable two-dimensional DCT-II: O(N^3), with a fixed small N.
     horizontal = [
@@ -136,6 +143,7 @@ def _frequency_measurement(image: Image.Image, size: int = 32) -> EvidenceChanne
             band = "low" if max(u, v) <= 3 else "high" if max(u, v) >= 16 else "mid"
             bands[band] += coefficients[v][u] ** 2
     total = sum(bands.values())
+    measured: dict[str, Any]
     if total == 0:
         measured = {"thumbnail_width": size, "thumbnail_height": size, "ac_energy": 0.0,
                     "energy_fraction_by_band": None}
