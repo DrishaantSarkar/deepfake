@@ -12,8 +12,15 @@ __pycache__/
 .mypy_cache/
 .pytest_cache/
 node_modules/
+frontend/node_modules/
+frontend/dist/
 trustlens/node_modules/
+backend/.trustlens-tmp/
+backend/.trustlens-test-tmp/
+backend/.trustlens-data/
 scratch/
+backend/scratch/
 .vscode/
 .DS_Store
 *.log
+

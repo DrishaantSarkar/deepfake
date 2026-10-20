@@ -166,7 +166,23 @@ class AdminAuthManager:
         )
 
 
-_STATIC = Path(__file__).with_name("static")
+def _resolve_static_dir() -> Path:
+    env_dir = os.environ.get("TRUSTLENS_STATIC_DIR")
+    if env_dir and Path(env_dir).is_dir():
+        return Path(env_dir).resolve()
+    candidates = [
+        Path(__file__).resolve().parents[2] / "frontend" / "static",
+        Path(__file__).resolve().parents[1] / "frontend" / "static",
+        Path(__file__).resolve().parent.parent / "frontend" / "static",
+        Path(__file__).resolve().parent / "static",
+    ]
+    for candidate in candidates:
+        if candidate.is_dir() and (candidate / "index.html").is_file():
+            return candidate
+    return Path(__file__).with_name("static")
+
+
+_STATIC = _resolve_static_dir()
 _UPLOAD_LIMIT = MediaLimits().max_file_bytes
 _BODY_LIMIT = _UPLOAD_LIMIT + 256 * 1024
 _IDEMPOTENCY_KEY = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")

@@ -26,4 +26,18 @@ module.exports = {
     ],
   },
   devtool: 'source-map',
+  devServer: {
+    static: {
+      directory: path.join(__dirname, 'static'),
+    },
+    port: 3000,
+    hot: true,
+    historyApiFallback: true,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8765',
+        changeOrigin: true,
+      },
+    },
+  },
 };

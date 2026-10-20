@@ -1,48 +1,79 @@
-# TRUSTLENS local investigation workspace
+# TRUSTLENS Investigation Workspace
 
-TRUSTLENS is an AI-assisted media-forensics library with a local browser application. The app calls the existing `trustlens.service.analyze_upload()` pipeline, stores report/history JSON in SQLite, and serves its interface and API from one origin.
+TRUSTLENS is an AI-assisted media-forensics platform with a decoupled React/TypeScript frontend and a FastAPI/PyTorch backend.
 
-## Run locally
+## Project Structure
 
-Use Python 3.11 or newer. In PowerShell from this directory:
-
-```powershell
-python -m venv .venv
-python -m pip --python .venv\Scripts\python.exe install -r requirements.txt
-.venv\Scripts\python.exe -m trustlens.web
+```
+.
+├── backend/                  # FastAPI & PyTorch forensics backend
+│   ├── checkpoints/          # Model weights (e.g., best_model.pt)
+│   ├── ml_pipeline/          # ML evaluation and training pipelines
+│   ├── tests/                # Automated backend test suite and media fixtures
+│   ├── trustlens/            # Python package (FastAPI, detectors, fusion graph)
+│   ├── requirements.txt      # Production backend requirements
+│   ├── requirements-dev.txt  # Test and development dependencies
+│   └── README.md             # Backend setup & commands
+│
+├── frontend/                 # React 18 + TypeScript SPA
+│   ├── src/                  # React components, views, context, API client
+│   ├── static/               # HTML entry point and static assets
+│   ├── package.json          # Frontend scripts and dependencies
+│   ├── tsconfig.json         # TypeScript compiler configuration
+│   ├── webpack.config.js     # Webpack bundler & devServer configuration
+│   └── README.md             # Frontend setup & commands
+│
+└── README.md                 # Root documentation
 ```
 
-Open [http://127.0.0.1:8765](http://127.0.0.1:8765). The server binds only to `127.0.0.1`. It has no login or multi-user authentication; do not expose it to a LAN, reverse proxy, or the public internet.
+---
 
-Set `TRUSTLENS_PORT` to choose another port (1–65535); the bind address remains loopback-only.
+## 🛠️ Build & Run Commands
 
-To clone the project from GitHub and run it on Windows, follow the [step-by-step tutorial](RUN_FROM_GITHUB.md).
+### 1. Frontend Commands
 
-The local data file defaults to `%LOCALAPPDATA%\TRUSTLENS\analyses.sqlite3` on Windows and `$XDG_DATA_HOME/TRUSTLENS/analyses.sqlite3` (or `~/.local/share/TRUSTLENS/analyses.sqlite3`) elsewhere. Set `TRUSTLENS_DB_PATH` to choose a different SQLite file. Set `TRUSTLENS_TEMP_DIR` to choose where temporary media is staged. Originals and derived frame artifacts are removed after the service call; SQLite retains report JSON and extracted metadata, which may include sensitive media metadata. Deleting a history item deletes its report row.
-
-Run the software tests with the development test dependency:
-
-```powershell
-python -m pip --python .venv\Scripts\python.exe install -r requirements-dev.txt
-$env:TRUSTLENS_TEMP_DIR = "$PWD\.trustlens-test-tmp"
-$env:TMP = "$PWD\.trustlens-test-tmp"
-$env:TEMP = "$PWD\.trustlens-test-tmp"
-.venv\Scripts\python.exe -m unittest discover -s tests -v
-node --check trustlens\static\app.js
+Navigate to the `frontend/` directory:
+```bash
+cd frontend
 ```
 
-For real loopback HTTP smoke coverage, first start the application in one PowerShell window with an isolated test DB and media directory:
+| Task | Command | Description |
+|------|---------|-------------|
+| **Install Dependencies** | `npm install` | Installs React, TypeScript, Tailwind, Webpack, etc. |
+| **Build for Production** | `npm run build` | Compiles TypeScript & Tailwind into `frontend/static/bundle.js` |
+| **Development Server** | `npm run dev` *(or `npm start`)* | Starts dev server on `http://localhost:3000` with hot reload & API proxy |
+| **Unit Tests** | `npm test` | Runs Jest test suite with React Testing Library |
+| **Lint & Format** | `npm run lint` | Runs ESLint across `src/` |
 
-```powershell
-$env:TRUSTLENS_DB_PATH = "$PWD\.trustlens-test-tmp\http-smoke.sqlite3"
-$env:TRUSTLENS_TEMP_DIR = "$PWD\.trustlens-test-tmp\http-smoke-media"
-.venv\Scripts\python.exe -m trustlens.web
+---
+
+### 2. Backend Commands
+
+Navigate to the `backend/` directory:
+```bash
+cd backend
 ```
 
-In a second window, set the same `TRUSTLENS_TEMP_DIR` and run `.venv\Scripts\python.exe tests\http_smoke.py`. The smoke script creates temporary image/video fixtures, exercises upload/idempotency/retrieval/error/deletion flows, and removes only its own report rows.
+| Task | Command | Description |
+|------|---------|-------------|
+| **Create Virtualenv** | `python -m venv .venv` | Creates Python 3.11+ virtual environment |
+| **Activate Virtualenv** | `.\.venv\Scripts\Activate.ps1` | Activates virtual environment in PowerShell *(Linux/macOS: `source .venv/bin/activate`)* |
+| **Install Dependencies** | `pip install -r requirements.txt` | Installs FastAPI, PyTorch, OpenCV, etc. |
+| **Install Dev Dependencies** | `pip install -r requirements-dev.txt` | Installs test libraries (`httpx`, etc.) |
+| **Build / Start Server** | `python -m trustlens.web` | Starts the FastAPI server on `http://127.0.0.1:8765` |
+| **Run Unit Tests** | `python -m unittest discover -s tests -v` | Runs all 101 backend unit and integration tests |
+| **Run Restart Smoke Test**| `python tests/http_restart_smoke.py` | Runs process persistence and cleanup smoke test |
 
-For an isolated backend process-restart/persistence check, run `.venv\Scripts\python.exe tests\http_restart_smoke.py` with no app already listening on the randomly selected loopback port. It creates a temporary database/media directory, starts and restarts TRUSTLENS, verifies the record/hash, then removes the report and its temporary directory.
+---
 
-## Current capability limits
+## How Frontend & Backend Work Together
 
-The application provides upload validation, source hashing, available descriptive image/video processing, report/history browsing, JSON report export, and local report deletion. It requires human review and does not claim calibrated authenticity probabilities. No trained deepfake model, calibrated fusion model, C2PA verifier, watermark detector, audio forensic model, user authentication, or durable media artifact store is configured. See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md), [REPORT_SCHEMA.md](REPORT_SCHEMA.md), and [INTEGRATION_PLAN.md](INTEGRATION_PLAN.md).
+1. **Integrated Mode (Production / Local Standalone)**:
+   - Build the frontend: `cd frontend && npm run build`
+   - Start the backend: `cd backend && python -m trustlens.web`
+   - Visit [http://127.0.0.1:8765](http://127.0.0.1:8765). The FastAPI server automatically resolves `frontend/static` and serves both the API endpoints and the built React bundle from a single origin.
+
+2. **Decoupled Development Mode**:
+   - Start the backend server: `cd backend && python -m trustlens.web` (listening on port `8765`).
+   - In a second terminal, start the frontend dev server: `cd frontend && npm run dev` (listening on port `3000`).
+   - The Webpack dev server proxies all `/api/*` calls automatically to the backend on `http://127.0.0.1:8765`.
