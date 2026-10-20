@@ -9,10 +9,6 @@
       "destination": "/:match*"
     },
     {
-      "source": "/api/:match*",
-      "destination": "/api/:match*"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
