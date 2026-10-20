@@ -1,19 +1,11 @@
 // Vercel Serverless Edge API Gateway for TRUSTLENS
 // Routes /api/* to the dedicated TRUSTLENS backend service configured via TRUSTLENS_BACKEND_URL
 
+export const config = { api: { bodyParser: false } };
+
 export default async function handler(req, res) {
   const backendUrl = process.env.TRUSTLENS_BACKEND_URL || process.env.BACKEND_API_URL;
-  const rawPath = req.query?.path;
-  const pathParts = Array.isArray(rawPath) ? rawPath : [rawPath];
-  const apiPath = pathParts.filter(Boolean).join('/');
-  const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(req.query || {})) {
-    if (key === 'path') continue;
-    for (const item of Array.isArray(value) ? value : [value]) {
-      if (item !== undefined) query.append(key, String(item));
-    }
-  }
-  const path = `/api/${apiPath}${query.size ? `?${query.toString()}` : ''}`;
+  const path = req.url || '';
 
   // Return live health status even if backend is pending configuration
   if (path.includes('/api/health') || path === '/health') {
@@ -65,6 +57,9 @@ export default async function handler(req, res) {
     const headers = { ...req.headers };
     delete headers.host;
     delete headers.connection;
+    // The browser origin is Vercel; the upstream sees Render as its host.
+    // Authentication is carried by the bearer session instead of Origin.
+    delete headers.origin;
 
     const method = req.method ? req.method.toUpperCase() : 'GET';
     const fetchOptions = {
@@ -72,13 +67,9 @@ export default async function handler(req, res) {
       headers: headers,
     };
 
-    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && req.body) {
-      if (typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
-        fetchOptions.body = JSON.stringify(req.body);
-        headers['content-type'] = 'application/json';
-      } else {
-        fetchOptions.body = req.body;
-      }
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+      fetchOptions.body = req;
+      fetchOptions.duplex = 'half';
     }
 
     const response = await fetch(targetUrl, fetchOptions);
@@ -103,3 +94,4 @@ export default async function handler(req, res) {
     });
   }
 }
+
