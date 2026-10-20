@@ -101,6 +101,12 @@ class WebApplicationTests(unittest.TestCase):
         self.assertEqual(cross_origin.status_code, 403)
         malformed_origin = self.client.post("/api/analyses", headers={"Origin": "http://["})
         self.assertEqual(malformed_origin.status_code, 403)
+        same_origin_https = self.client.post(
+            "/api/analyses",
+            files={"file": ("test_https.png", image_bytes(), "image/png")},
+            headers={"Origin": "https://127.0.0.1", "Host": "127.0.0.1"},
+        )
+        self.assertEqual(same_origin_https.status_code, 201)
 
     def test_unknown_records_filters_and_storage_failures_return_errors_without_leaking_details(self):
         self.assertEqual(self.client.get("/api/analyses/missing-id").status_code, 404)

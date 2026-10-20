@@ -1,0 +1,39 @@
+services:
+  trustlens:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: trustlens:latest
+    container_name: trustlens-app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8765}:8765"
+    environment:
+      - TRUSTLENS_HOST=0.0.0.0
+      - TRUSTLENS_PORT=8765
+      - TRUSTLENS_ALLOWED_HOSTS=${TRUSTLENS_ALLOWED_HOSTS:-*}
+      - TRUSTLENS_DB_PATH=/app/data/analyses.sqlite3
+      - TRUSTLENS_TEMP_DIR=/app/temp
+      - TRUSTLENS_MODEL_PATH=/app/checkpoints/best_model.pt
+      - TRUSTLENS_ADMIN_KEY=${TRUSTLENS_ADMIN_KEY:-trustlens-admin-secure-key}
+      - TRUSTLENS_ENV=${TRUSTLENS_ENV:-production}
+    volumes:
+      - trustlens-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8765/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+volumes:
+  trustlens-data:
+    driver: local
