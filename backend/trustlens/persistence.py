@@ -48,6 +48,8 @@ class _HybridRow(dict):
 
 
 def _hybrid_row(cursor):
+    if cursor.description is None:
+        return tuple
     columns = tuple(column.name for column in cursor.description)
 
     def make_row(row):
