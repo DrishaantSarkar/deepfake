@@ -47,8 +47,13 @@ class _HybridRow(dict):
         return super().__getitem__(key)
 
 
-def _hybrid_row(cursor, row):
-    return _HybridRow(zip((column.name for column in cursor.description), row))
+def _hybrid_row(cursor):
+    columns = tuple(column.name for column in cursor.description)
+
+    def make_row(row):
+        return _HybridRow(zip(columns, row))
+
+    return make_row
 
 
 class _PostgresConnection:
