@@ -3,7 +3,17 @@
 
 export default async function handler(req, res) {
   const backendUrl = process.env.TRUSTLENS_BACKEND_URL || process.env.BACKEND_API_URL;
-  const path = req.url || '';
+  const rawPath = req.query?.path;
+  const pathParts = Array.isArray(rawPath) ? rawPath : [rawPath];
+  const apiPath = pathParts.filter(Boolean).join('/');
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(req.query || {})) {
+    if (key === 'path') continue;
+    for (const item of Array.isArray(value) ? value : [value]) {
+      if (item !== undefined) query.append(key, String(item));
+    }
+  }
+  const path = `/api/${apiPath}${query.size ? `?${query.toString()}` : ''}`;
 
   // Return live health status even if backend is pending configuration
   if (path.includes('/api/health') || path === '/health') {
