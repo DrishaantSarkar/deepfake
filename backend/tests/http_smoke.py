@@ -36,7 +36,7 @@ def main() -> None:
             health = client.get("/api/health")
             assert health.status_code == 200 and health.json()["status"] == "available", health.text
             caps = client.get("/api/capabilities").json()
-            assert caps["image"]["trained_detector"] == "unavailable"
+            detector_available = caps["image"]["trained_detector"] == "available"
             assert caps["video"]["temporal_classifier"] == "unavailable"
             baseline_total = client.get("/api/stats").json()["total"]
             try:
@@ -56,7 +56,8 @@ def main() -> None:
                 report = image_record["report"]
                 assert report["source"]["sha256"] == hashlib.sha256(encoded.tobytes()).hexdigest()
                 assert report["proposed_outcome"] == "INSUFFICIENT_EVIDENCE_REVIEW"
-                assert report["analysis"]["result"]["detector"]["status"] == "UNAVAILABLE"
+                expected_detector_status = "SUCCESS" if detector_available else "UNAVAILABLE"
+                assert report["analysis"]["result"]["detector"]["status"] == expected_detector_status
                 replay = client.post(
                     "/api/analyses",
                     files={"file": (f"{token}-fixture.png", encoded.tobytes(), "image/png")},

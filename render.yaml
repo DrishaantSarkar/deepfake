@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: trustlens-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: virginia
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: TRUSTLENS_ENV
+        value: production
+      - key: TRUSTLENS_HOST
+        value: 0.0.0.0
+      - key: TRUSTLENS_PORT
+        value: "10000"
+      - key: TRUSTLENS_ALLOWED_HOSTS
+        value: "*"
+      - key: TRUSTLENS_DB_PATH
+        value: /app/data/analyses.sqlite3
+      - key: TRUSTLENS_TEMP_DIR
+        value: /app/temp
+      - key: TRUSTLENS_MODEL_PATH
+        value: /app/checkpoints/best_model.pt
+      - key: TRUSTLENS_REQUIRE_AUTH
+        value: "true"
+      - key: TRUSTLENS_ADMIN_KEY
+        sync: false
+

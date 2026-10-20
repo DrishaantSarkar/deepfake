@@ -1,6 +1,6 @@
 # Local application API
 
-The API is same-origin with the browser UI and is served only from the loopback server at `http://127.0.0.1:8765`. OpenAPI is available at `/api/docs` while the app is running. There is no application login or multi-user authorization; do not expose these routes to a network.
+The local API is served from `http://127.0.0.1:8765`. OpenAPI is available at `/api/docs` while the app is running. Local development keeps authentication disabled. Hosted demos must set `TRUSTLENS_REQUIRE_AUTH=true` and a strong `TRUSTLENS_ADMIN_KEY`; the UI then requires that shared key to issue short-lived sessions. Keep the key private. The hosted demo uses one shared workspace, not separate user accounts.
 
 | Route | Purpose |
 |---|---|
@@ -20,4 +20,5 @@ State-changing requests with an `Origin` header must match the request host over
 
 The request upload is hashed before processing. `analyze_upload()` stages/validates media, produces the report, and cleans staged originals and derived frame files before returning. SQLite persists the report JSON and its extracted source metadata, including parser-observed fields; it does not persist original image/video bytes or retrievable video-frame images. The history list stores display filename, media type, source SHA-256, status, timestamps, and report content. A hash is an integrity identifier, not proof of provenance or custody.
 
-The default DB path is outside the workspace under the current OS user's local application data directory. Override with `TRUSTLENS_DB_PATH`; override media staging with `TRUSTLENS_TEMP_DIR`. SQLite is not encrypted by this application. Access is governed by the OS account and filesystem permissions. There are no cookies or bearer tokens because this local single-user MVP has no application identity system.
+The default DB path is outside the workspace under the current OS user's local application data directory. Override with `TRUSTLENS_DB_PATH`; override media staging with `TRUSTLENS_TEMP_DIR`. SQLite is not encrypted by this application. Access is governed by the OS account and filesystem permissions. Hosted sessions use short-lived bearer tokens stored in browser session storage. All authenticated users share one workspace and can view or delete its analyses. On free hosting, the database is ephemeral and history may be lost when the service restarts or redeploys.
+

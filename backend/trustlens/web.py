@@ -214,7 +214,7 @@ class RequestBoundaryMiddleware:
             except ValueError:
                 await self._json(send, 403, {"error": {"code": "cross_origin_request", "message": "Cross-origin state changes are not allowed."}})
                 return
-            if parsed.scheme != "http" or parsed.netloc.lower() != host or parsed.path or parsed.query or parsed.fragment:
+            if parsed.scheme not in {"http", "https"} or parsed.netloc.lower() != host or parsed.path or parsed.query or parsed.fragment:
                 await self._json(send, 403, {"error": {"code": "cross_origin_request", "message": "Cross-origin state changes are not allowed."}})
                 return
         content_length = headers.get(b"content-length")
@@ -268,6 +268,27 @@ class RequestBoundaryMiddleware:
         body = json.dumps(value).encode("utf-8")
         await send({"type": "http.response.start", "status": status, "headers": [(b"content-type", b"application/json; charset=utf-8"), (b"content-length", str(len(body)).encode())]})
         await send({"type": "http.response.body", "body": body})
+
+
+class ApiAuthenticationMiddleware:
+    """Require an admin session for API routes when running as a hosted demo."""
+
+    def __init__(self, app, auth_manager: AdminAuthManager):
+        self.app = app
+        self.auth_manager = auth_manager
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and os.environ.get("TRUSTLENS_REQUIRE_AUTH", "").lower() in {"1", "true", "yes"}:
+            path = scope.get("path", "")
+            public_paths = {"/api/health", "/api/admin/verify"}
+            if path.startswith("/api/") and path not in public_paths:
+                request = Request(scope, receive=receive)
+                authorized, status_code, error = self.auth_manager.check_request(request)
+                if not authorized:
+                    response = JSONResponse(status_code=status_code, content=error)
+                    await response(scope, receive, send)
+                    return
+        await self.app(scope, receive, send)
 
 
 def _hash_upload(upload: UploadFile) -> str:
@@ -333,7 +354,12 @@ def create_app(store: AnalysisStore | None = None, detector: Any = None) -> Fast
         redoc_url=None,
         openapi_url="/api/openapi.json",
     )
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost"])
+    allowed_hosts_raw = os.environ.get("TRUSTLENS_ALLOWED_HOSTS", "").strip()
+    if allowed_hosts_raw:
+        allowed_hosts = [h.strip() for h in allowed_hosts_raw.split(",") if h.strip()]
+    else:
+        allowed_hosts = ["127.0.0.1", "localhost"]
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
     app.add_middleware(RequestBoundaryMiddleware)
     resolved_store = store
     resolved_detector = detector
@@ -421,6 +447,7 @@ def create_app(store: AnalysisStore | None = None, detector: Any = None) -> Fast
 
     admin_auth = AdminAuthManager()
     app.state.admin_auth_manager = admin_auth
+    app.add_middleware(ApiAuthenticationMiddleware, auth_manager=admin_auth)
 
     @app.post("/api/admin/verify")
     async def verify_admin(request: Request):
@@ -628,15 +655,17 @@ def main() -> None:
                 os.environ["TRUSTLENS_MODEL_PATH"] = str(candidate.resolve())
                 break
 
-    port_text = os.environ.get("TRUSTLENS_PORT", "8765")
+    host = os.environ.get("TRUSTLENS_HOST", "127.0.0.1")
+    port_text = os.environ.get("PORT") or os.environ.get("TRUSTLENS_PORT", "8765")
     try:
         port = int(port_text)
     except ValueError as exc:
         raise SystemExit("TRUSTLENS_PORT must be an integer from 1 to 65535.") from exc
     if not 1 <= port <= 65535:
         raise SystemExit("TRUSTLENS_PORT must be an integer from 1 to 65535.")
-    uvicorn.run("trustlens.web:create_app", factory=True, host="127.0.0.1", port=port, reload=False, workers=1)
+    uvicorn.run("trustlens.web:create_app", factory=True, host=host, port=port, reload=False, workers=1)
 
 
 if __name__ == "__main__":
     main()
+

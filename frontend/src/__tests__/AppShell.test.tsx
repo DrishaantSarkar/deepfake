@@ -29,6 +29,10 @@ jest.mock("../services/api", () => ({
       report_persistence: "sqlite",
       authentication: "none",
     }),
+    hasSession: jest.fn().mockReturnValue(true),
+    onSessionRequired: jest.fn().mockReturnValue(() => {}),
+    login: jest.fn().mockResolvedValue(true),
+    logout: jest.fn(),
   },
 }));
 
