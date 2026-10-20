@@ -76,14 +76,20 @@ export default function DetailView() {
     }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!selectedAnalysisId) return;
-    const downloadUrl = api.getReportDownloadUrl(selectedAnalysisId);
-    const a = document.createElement("a");
-    a.href = downloadUrl;
-    a.download = `trustlens-${selectedAnalysisId}.json`;
-    a.click();
-    showToast("Exporting forensic JSON report.");
+    try {
+      const reportBlob = await api.getReportBlob(selectedAnalysisId);
+      const objectUrl = URL.createObjectURL(reportBlob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = `trustlens-${selectedAnalysisId}.json`;
+      a.click();
+      URL.revokeObjectURL(objectUrl);
+      showToast("Exporting forensic JSON report.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to export report.");
+    }
   };
 
   if (loading) {
@@ -370,3 +376,4 @@ export default function DetailView() {
     </section>
   );
 }
+
