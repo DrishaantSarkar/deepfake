@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import json
 import os
+import psycopg
 import re
 import secrets
 import shutil
@@ -29,6 +30,7 @@ from .ingestion import IngestionError, MediaLimits, ProcessingStatus
 from .persistence import (
     AnalysisStore,
     IdempotencyConflict,
+    STORAGE_ERRORS,
     StoredReportError,
     default_database_path,
 )
@@ -373,7 +375,8 @@ def create_app(store: AnalysisStore | None = None, detector: Any = None) -> Fast
     def database() -> AnalysisStore:
         nonlocal resolved_store
         if resolved_store is None:
-            resolved_store = AnalysisStore(default_database_path())
+            database_url = os.environ.get("TRUSTLENS_DATABASE_URL") or os.environ.get("DATABASE_URL")
+            resolved_store = AnalysisStore(database_url or default_database_path())
         return resolved_store
 
     @app.exception_handler(RequestValidationError)
@@ -386,8 +389,9 @@ def create_app(store: AnalysisStore | None = None, detector: Any = None) -> Fast
         return JSONResponse(status_code=exc.status_code, content={"error": {"code": "not_found" if exc.status_code == 404 else "http_error", "message": messages.get(exc.status_code, "The request could not be completed.")}})
 
     @app.exception_handler(sqlite3.Error)
-    async def storage_error(request: Request, exc: sqlite3.Error):
-        return JSONResponse(status_code=503, content={"error": {"code": "local_storage_unavailable", "message": "Local analysis storage is unavailable. Check the configured data directory."}})
+    @app.exception_handler(psycopg.Error)
+    async def storage_error(request: Request, exc: Exception):
+        return JSONResponse(status_code=503, content={"error": {"code": "storage_unavailable", "message": "Analysis storage is temporarily unavailable."}})
 
     @app.exception_handler(StoredReportError)
     async def stored_report_error(request: Request, exc: StoredReportError):
@@ -513,7 +517,7 @@ def create_app(store: AnalysisStore | None = None, detector: Any = None) -> Fast
         }
         database_info = {
             "status": "CONNECTED",
-            "engine": "sqlite3",
+            "engine": "postgresql" if database().is_postgres else "sqlite3",
             "path": str(database().db_path),
             "investigations_count": db_stats.get("total", 0),
             "total_analyses": db_stats.get("total", 0),
@@ -587,8 +591,8 @@ def create_app(store: AnalysisStore | None = None, detector: Any = None) -> Fast
             return JSONResponse(status_code=201 if created else 200, content=record)
         except IdempotencyConflict as exc:
             return JSONResponse(status_code=409, content={"error": {"code": "idempotency_conflict", "message": str(exc)}})
-        except (OSError, sqlite3.Error):
-            return JSONResponse(status_code=503, content={"error": {"code": "local_storage_unavailable", "message": "Local analysis storage is unavailable. Check the configured data directory."}})
+        except (OSError, *STORAGE_ERRORS):
+            return JSONResponse(status_code=503, content={"error": {"code": "storage_unavailable", "message": "Analysis storage is temporarily unavailable."}})
         finally:
             await file.close()
 
