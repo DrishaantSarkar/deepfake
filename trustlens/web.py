@@ -50,7 +50,7 @@ class AdminAuthManager:
     def admin_key(self) -> str | None:
         if self._admin_key is not None:
             return self._admin_key
-        return os.environ.get("TRUSTLENS_ADMIN_KEY", "trustlens-hackathon-admin-key")
+        return os.environ.get("TRUSTLENS_ADMIN_KEY")
 
     @property
     def is_configured(self) -> bool:
@@ -254,6 +254,27 @@ class RequestBoundaryMiddleware:
         await send({"type": "http.response.body", "body": body})
 
 
+class ApiAuthenticationMiddleware:
+    """Require an admin session for API routes when running as a hosted demo."""
+
+    def __init__(self, app, auth_manager: AdminAuthManager):
+        self.app = app
+        self.auth_manager = auth_manager
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and os.environ.get("TRUSTLENS_REQUIRE_AUTH", "").lower() in {"1", "true", "yes"}:
+            path = scope.get("path", "")
+            public_paths = {"/api/health", "/api/admin/verify"}
+            if path.startswith("/api/") and path not in public_paths:
+                request = Request(scope, receive=receive)
+                authorized, status_code, error = self.auth_manager.check_request(request)
+                if not authorized:
+                    response = JSONResponse(status_code=status_code, content=error)
+                    await response(scope, receive, send)
+                    return
+        await self.app(scope, receive, send)
+
+
 def _hash_upload(upload: UploadFile) -> str:
     digest = hashlib.sha256()
     upload.file.seek(0)
@@ -410,6 +431,7 @@ def create_app(store: AnalysisStore | None = None, detector: Any = None) -> Fast
 
     admin_auth = AdminAuthManager()
     app.state.admin_auth_manager = admin_auth
+    app.add_middleware(ApiAuthenticationMiddleware, auth_manager=admin_auth)
 
     @app.post("/api/admin/verify")
     async def verify_admin(request: Request):
@@ -630,3 +652,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
