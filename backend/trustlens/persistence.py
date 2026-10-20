@@ -10,6 +10,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+import psycopg
+
+STORAGE_ERRORS = (sqlite3.Error, psycopg.Error)
+
 
 class IdempotencyConflict(ValueError):
     """An idempotency key was reused for a different source file."""
@@ -34,16 +38,59 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
+class _HybridRow(dict):
+    """Dictionary row that also supports SQLite-style positional access."""
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            key = tuple(self.keys())[key]
+        return super().__getitem__(key)
+
+
+def _hybrid_row(cursor, row):
+    return _HybridRow(zip((column.name for column in cursor.description), row))
+
+
+class _PostgresConnection:
+    """Small adapter for SQL shared by SQLite and PostgreSQL."""
+
+    def __init__(self, connection):
+        self._connection = connection
+
+    def __enter__(self):
+        self._connection.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return self._connection.__exit__(exc_type, exc_value, traceback)
+
+    def execute(self, query, parameters=()):
+        return self._connection.execute(query.replace("?", "%s"), parameters)
+
+    def close(self):
+        self._connection.close()
+
+
 class AnalysisStore:
-    """Thread-safe-by-connection SQLite store for report metadata, not media."""
+    """Connection-per-operation store for report metadata, never media."""
 
     def __init__(self, database_path: str | Path):
-        self.path = Path(database_path).expanduser().resolve()
-        self.db_path = self.path
-        self.path.parent.mkdir(parents=True, exist_ok=True)
+        database_path = str(database_path)
+        self.database_url = database_path if database_path.startswith(("postgres://", "postgresql://")) else None
+        self.is_postgres = self.database_url is not None
+        if self.is_postgres:
+            self.path = None
+            self.db_path = "managed PostgreSQL"
+        else:
+            self.path = Path(database_path).expanduser().resolve()
+            self.db_path = self.path
+            self.path.parent.mkdir(parents=True, exist_ok=True)
         self._initialize()
 
-    def _connect(self) -> sqlite3.Connection:
+    def _connect(self):
+        if self.is_postgres:
+            connection = psycopg.connect(self.database_url, connect_timeout=10, row_factory=_hybrid_row)
+            return _PostgresConnection(connection)
         connection = sqlite3.connect(self.path, timeout=10)
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
@@ -62,7 +109,8 @@ class AnalysisStore:
 
     def _initialize(self) -> None:
         with self._session() as connection:
-            connection.execute("PRAGMA journal_mode = WAL")
+            if not self.is_postgres:
+                connection.execute("PRAGMA journal_mode = WAL")
             connection.execute("""
                 CREATE TABLE IF NOT EXISTS analyses (
                     analysis_id TEXT PRIMARY KEY,
@@ -80,7 +128,7 @@ class AnalysisStore:
             connection.execute("CREATE INDEX IF NOT EXISTS analyses_created_idx ON analyses(created_at DESC)")
             connection.execute("CREATE INDEX IF NOT EXISTS analyses_status_idx ON analyses(processing_status)")
             connection.execute("CREATE INDEX IF NOT EXISTS analyses_media_idx ON analyses(media_type)")
-        if os.name != "nt":
+        if not self.is_postgres and os.name != "nt":
             try:
                 self.path.parent.chmod(0o700)
                 self.path.chmod(0o600)
@@ -164,7 +212,7 @@ class AnalysisStore:
                     json.dumps(report, ensure_ascii=False, allow_nan=False, separators=(",", ":")),
                     idempotency_key,
                 ))
-            except sqlite3.IntegrityError:
+            except (sqlite3.IntegrityError, psycopg.IntegrityError):
                 if idempotency_key:
                     row = connection.execute("SELECT * FROM analyses WHERE idempotency_key = ?", (idempotency_key,)).fetchone()
                     if row is not None:
