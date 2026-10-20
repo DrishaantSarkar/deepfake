@@ -74,7 +74,7 @@ export default async function handler(req, res) {
 
     const response = await fetch(targetUrl, fetchOptions);
     const contentType = response.headers.get('content-type') || 'application/json';
-    
+
     res.status(response.status);
     res.setHeader('Content-Type', contentType);
 
